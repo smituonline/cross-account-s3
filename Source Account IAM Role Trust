@@ -1,0 +1,12 @@
+{  
+ "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::{shared account}:role/cross-account-shared-role"
+            },
+            "Action": "sts:AssumeRole"
+        }
+    ]
+}
