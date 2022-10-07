@@ -1,0 +1,8 @@
+{
+    "Version": "2012-10-17",
+    "Statement": {
+        "Effect": "Allow",
+        "Action": "sts:AssumeRole",
+        "Resource": "arn:aws:iam::{shared account}:role/cross-account-shared-role"
+    }
+}
