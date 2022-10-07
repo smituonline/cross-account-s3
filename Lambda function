@@ -1,0 +1,47 @@
+import boto3
+import json
+ 
+S3_BUCKET = 'cross-account-source-bucket'
+ 
+def lambda_handler(event, context):
+     
+    sts_connection= boto3.client('sts')
+    account_shared=sts_connection.assume_role(
+        RoleArn="arn:aws:iam::{shared account}:role/cross-account-shared-role",
+        RoleSessionName="cross_account_lambda"
+        )
+         
+    ACCESS_KEY= account_shared['Credentials']['AccessKeyId']
+    SECRET_KEY= account_shared['Credentials']['SecretAccessKey']
+    SESSION_TOKEN= account_shared['Credentials']['SessionToken']
+     
+    sts_shared_client = boto3.client(
+            'sts', aws_access_key_id=ACCESS_KEY, aws_secret_access_key=SECRET_KEY,aws_session_token=SESSION_TOKEN)
+         
+             
+    source_connection= sts_shared_client.assume_role(
+        RoleArn="arn:aws:iam::{source account}:role/cross_account_assumed_role",
+        RoleSessionName="cross_account_lambda"
+        )
+             
+             
+    ACCESS_KEY_SOURCE= source_connection['Credentials']['AccessKeyId']
+    SECRET_KEY_SOURCE= source_connection['Credentials']['SecretAccessKey']
+    SESSION_TOKEN_SOURCE= source_connection['Credentials']['SessionToken']
+     
+    source_client= boto3.client(
+        's3',
+        aws_access_key_id=ACCESS_KEY_SOURCE,
+        aws_secret_access_key=SECRET_KEY_SOURCE,
+        aws_session_token=SESSION_TOKEN_SOURCE
+            )
+    response = source_client.list_objects_v2(
+        Bucket=S3_BUCKET)
+    s3_files = response["Contents"]
+    file_content_list = list()
+    for s3_file in s3_files:
+        file_content = source_client.get_object(
+        Bucket=S3_BUCKET, Key=s3_file["Key"])["Body"].read()  
+        file_content_list.append(json.loads(json.dumps(file_content, default=str)))
+      
+    return file_content_list
